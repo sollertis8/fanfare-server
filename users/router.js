@@ -9,8 +9,8 @@ const jsonParser = bodyParser.json();
 const urlencodedParser = bodyParser.urlencoded({extended: true});
 
 // Post to register a new user
-router.post('/', urlencodedParser, (req, res) => {
-    const requiredFields = ['username', 'password'];
+router.post('/', jsonParser, (req, res) => {
+    const requiredFields = ['username', 'email', 'password'];
     const missingField = requiredFields.find(field => !(field in req.body));
 
     if (missingField) {
@@ -19,7 +19,7 @@ router.post('/', urlencodedParser, (req, res) => {
             .json({code: 422, reason: 'ValidationError', message: 'Missing field', location: missingField});
     }
 
-    const stringFields = ['username', 'password'];
+    const stringFields = ['username', 'email', 'password'];
     const nonStringField = stringFields.find(field => field in req.body && typeof req.body[field] !== 'string');
 
     if (nonStringField) {
@@ -35,7 +35,7 @@ router.post('/', urlencodedParser, (req, res) => {
     // them and expecting the user to understand. We'll silently trim the other
     // fields, because they aren't credentials used to log in, so it's less of a
     // problem.
-    const explicitlyTrimmedFields = ['username', 'password'];
+    const explicitlyTrimmedFields = ['username', 'email', 'password'];
     const nonTrimmedField = explicitlyTrimmedFields.find(field => req.body[field].trim() !== req.body[field]);
 
     if (nonTrimmedField) {
@@ -48,8 +48,11 @@ router.post('/', urlencodedParser, (req, res) => {
         username: {
             min: 1
         },
+        email: {
+            min: 1
+        },
         password: {
-            min: 10,
+            min: 8,
             // bcrypt truncates after 72 characters, so let's not give the illusion of
             // security by storing extra (unused) info
             max: 72
@@ -75,23 +78,23 @@ router.post('/', urlencodedParser, (req, res) => {
             });
     }
 
-    let {username, password} = req.body;
-    // Username and password come in pre-trimmed, otherwise we throw an error before
-    // this
+    let {username, email, password} = req.body;
+    // Username, email and password come in pre-trimmed, otherwise we throw an error
+    // before this
 
     return User
         .find({username})
         .count()
         .then(count => {
             if (count > 0) {
-                // There is an existing user with the same username
+                // There is an existing user with the same email
                 return Promise.reject({code: 422, reason: 'ValidationError', message: 'Username already taken', location: 'username'});
             }
             // If there is no existing user, hash the password
             return User.hashPassword(password);
         })
         .then(hash => {
-            return User.create({username, password: hash});
+            return User.create({username, email, password: hash});
         })
         .then(user => {
             return res
@@ -113,8 +116,8 @@ router.post('/', urlencodedParser, (req, res) => {
 });
 
 // Never expose all your users like below in a prod application we're just doing
-// this so we have a quick way to see if we're creating users. keep in mind, you
-// can also verify this in the Mongo shell.
+// this so we have a quick way to see if we're creating users. keep in mind,
+// you can also verify this in the Mongo shell.
 router.get('/', (req, res) => {
     return User
         .find()

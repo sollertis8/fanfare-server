@@ -10,6 +10,11 @@ const UserSchema = mongoose.Schema({
         required: true,
         unique: true
     },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
     password: {
         type: String,
         required: true
@@ -19,7 +24,8 @@ const UserSchema = mongoose.Schema({
 UserSchema.methods.serialize = function () {
     return {
         username: this.username || "",
-        projects: this.projects || ""
+        // projects: this.projects || ""
+        email: this.email || ""
     };
 };
 

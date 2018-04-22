@@ -47,10 +47,10 @@ app.get('/api/protected', jwtAuth, (req, res) => {
 });
 
 const home = require('./routes/index');
-const project = require('./projects/router');
+// const project = require('./projects/router');
 app.use('/', home);
 
-app.use('/project', project)
+// app.use('/project', project)
 
 app.use(express.static('public'));
 

@@ -18,4 +18,8 @@ router.get('/login', (req, res) => {
     res.sendFile('/login.html', {root: ('./views')});
 });
 
+router.get('/user/account', jwtAuth, function (req, res) {
+    res.send();
+});
+
 module.exports = router;
