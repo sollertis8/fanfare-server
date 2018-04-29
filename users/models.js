@@ -22,6 +22,10 @@ const UserSchema = mongoose.Schema({
     account_type: {
         type: String,
         required: false
+    },
+    corner_type: {
+        type: String,
+        required: false
     }
 });
 

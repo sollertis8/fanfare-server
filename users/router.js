@@ -116,8 +116,8 @@ router.post('/', jsonParser, (req, res) => {
 });
 
 // Never expose all your users like below in a prod application we're just doing
-// this so we have a quick way to see if we're creating users. keep in mind,
-// you can also verify this in the Mongo shell.
+// this so we have a quick way to see if we're creating users. keep in mind, you
+// can also verify this in the Mongo shell.
 router.get('/', (req, res) => {
     return User
         .find()
@@ -180,7 +180,7 @@ router.put('/user/:id', jsonParser, (req, res) => {
     }
 
     const toUpdate = {};
-    const updateableFields = ['username', 'password', 'account_type'];
+    const updateableFields = ['username', 'password', 'account_type', 'corner_type'];
     console.log("REQ", req.body)
     updateableFields.forEach(field => {
         if (field in req.body[1]) {
