@@ -159,6 +159,45 @@ router.put('/account/:id', jsonParser, (req, res) => {
         .end();
 });
 
+router.put('/user/:id', jsonParser, (req, res) => {
+    const requiredFields = ['id'];
+    for (let i = 0; i < requiredFields.length; i++) {
+        const field = requiredFields[i];
+        if (!(field in req.body[0])) {
+            const message = `${field}\` is required`
+            console.error(message);
+            return res
+                .status(400)
+                .send(message);
+        }
+    }
+    if (req.params.id !== req.body[0].id) {
+        const message = `Request path id (${req.params.id}) and request body id (${req.body[0].id}) must match`;
+        console.error(message);
+        return res
+            .status(400)
+            .send(message);
+    }
+
+    const toUpdate = {};
+    const updateableFields = ['username', 'password', 'account_type'];
+    console.log("REQ", req.body)
+    updateableFields.forEach(field => {
+        if (field in req.body[1]) {
+            toUpdate[field] = req.body[1][field];
+        }
+    });
+    console.log(req.params.id)
+    User
+        .findByIdAndUpdate(req.params.id, {$set: toUpdate})
+        .then(user => res.status(204))
+        .catch(err => res.status(500).json({message: err}));
+    res
+        .status(204)
+        .end();
+
+});
+
 // delete user
 router.delete('/account/:id', (req, res) => {
     Users.delete(req.params.id);

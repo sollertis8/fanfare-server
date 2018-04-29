@@ -18,6 +18,10 @@ const UserSchema = mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    account_type: {
+        type: String,
+        required: false
     }
 });
 
@@ -25,7 +29,8 @@ UserSchema.methods.serialize = function () {
     return {
         username: this.username || "",
         // projects: this.projects || ""
-        email: this.email || ""
+        email: this.email || "",
+        account_type: this.account_type || ""
     };
 };
 
