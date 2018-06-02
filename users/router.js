@@ -1,14 +1,31 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-
+const multer = require('multer')
 const {User} = require('./models');
-
 const router = express.Router();
-
+const uuid = require('uuid');
+const path = require('path');
 const jsonParser = bodyParser.json();
 const urlencodedParser = bodyParser.urlencoded({extended: true});
-
-// Post to register a new user
+const fs = require('fs');
+// const formidable = require('formidable'); router.use(formidable({ encoding:
+// 'utf-8', uploadDir: '/uploads', multiples: false,     // req.files to be
+// arrays of files })); configure storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {/*         Files will be saved in
+the 'uploads' directory. Make     sure this directory already exists! */
+        cb(null, './uploads/');
+    },
+    filename: (req, file, cb) => {
+        const newFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+        cb(null, newFilename);
+    }
+});
+// create the multer instance that will be used to upload/save the file const
+upload = multer({dest: './uploads'});
+// var upload = multer({dest: './uploads'}).array('txtThumb',
+// settings.maxFilesUpload); router.use(multer({dest:
+// 'uploads/'}).single('file')); Post to register a new user
 router.post('/', jsonParser, (req, res) => {
     const requiredFields = ['username', 'email', 'password'];
     const missingField = requiredFields.find(field => !(field in req.body));
@@ -159,6 +176,60 @@ router.put('/account/:id', jsonParser, (req, res) => {
         .end();
 });
 
+// get user profile
+router.get('/profile/:id', (req, res) => {
+    User
+        .findById(req.params.id, function (e, profile) {
+            if (e) 
+                return next(e)
+            res
+                .status(200)
+                .send(profile)
+        })
+})
+
+// save images
+router.post('/profile/:id', (req, res) => {
+    console.log(req.body.id);
+    console.log(req.body.profile_image);
+
+    const requiredFields = ['id'];
+    for (let i = 0; i < requiredFields.length; i++) {
+        const field = requiredFields[i];
+        if (!(field in req.body)) {
+            const message = `${field}\` is required`
+            console.error(message);
+            return res
+                .status(400)
+                .send(message);
+        }
+    }
+    if (req.params.id !== req.body.id) {
+        const message = `Request path id (${req.params.id}) and request body id (${req.body.id}) must match`;
+        console.error(message);
+        return res
+            .status(400)
+            .send(message);
+    }
+
+    const toUpdate = {};
+    const updateableFields = ['profile_image'];
+    updateableFields.forEach(field => {
+        if (field in req.body) {
+            toUpdate[field] = req.body[field];
+        }
+    });
+
+    User
+        .findByIdAndUpdate(req.params.id, {$set: toUpdate})
+        .then(user => res.status(204))
+        .catch(err => res.status(500).json({message: err}));
+    res
+        .status(204)
+        .end();
+
+})
+
 router.put('/user/:id', jsonParser, (req, res) => {
     const requiredFields = ['id'];
     for (let i = 0; i < requiredFields.length; i++) {
@@ -180,7 +251,22 @@ router.put('/user/:id', jsonParser, (req, res) => {
     }
 
     const toUpdate = {};
-    const updateableFields = ['username', 'password', 'account_type', 'corner_type'];
+    const updateableFields = [
+        'username',
+        'password',
+        'account_type',
+        'corner_type',
+        'profile_image',
+        'stage_name',
+        'genre',
+        'city',
+        'state',
+        'fans',
+        'fan_of',
+        'applause',
+        'shows',
+        'tips'
+    ];
     console.log("REQ", req.body)
     updateableFields.forEach(field => {
         if (field in req.body[1]) {
@@ -215,3 +301,20 @@ router.get('/account/:id', (req, res) => {
 module.exports = {
     router
 };
+
+// upload Image
+router.post('/upload', (req, res, next) => {
+    console.log(req);
+    let imageFile = req.files.file;
+
+    imageFile.mv(`${__dirname}/public/${req.body.filename}.jpg`, function (err) {
+        if (err) {
+            return res
+                .status(500)
+                .send(err);
+        }
+
+        res.json({file: `public/${req.body.filename}.jpg`});
+    });
+
+})

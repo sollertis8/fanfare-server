@@ -5,10 +5,12 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const passport = require('passport');
 const morgan = require('morgan');
+const fileUpload = require('express-fileupload');
 const d3 = require("d3");
-// const innersvg = require("innersvg-polyfill"); require('./public/js/index');
-// const passportConfig = require('./config/passport') passportConfig(app,
-// passport)
+const multer = require('multer');
+// const formidable = require('express-formidable'); const innersvg =
+// require("innersvg-polyfill"); require('./public/js/index'); const
+// passportConfig = require('./config/passport') passportConfig(app, passport)
 
 const {router: usersRouter} = require('./users');
 const {router: authRouter, localStrategy, jwtStrategy} = require('./auth');
@@ -33,6 +35,9 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.use(fileUpload());
+// app.use(formidable({     encoding: 'utf-8', uploadDir: './uploads',
+// multiples: false, // req.files to be arrays of files }));
 passport.use(localStrategy);
 passport.use(jwtStrategy);
 
@@ -53,6 +58,9 @@ app.use('/', home);
 // app.use('/project', project)
 
 app.use(express.static('public'));
+
+// multer
+app.use(multer({dest: './public/uploads/'}).single('file'));
 
 let server;
 

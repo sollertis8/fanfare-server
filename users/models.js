@@ -26,15 +26,66 @@ const UserSchema = mongoose.Schema({
     corner_type: {
         type: String,
         required: false
+    },
+    profile_image: {
+        type: String,
+        required: false
+    },
+    stage_name: {
+        type: String,
+        required: false,
+        unique: true
+    },
+    genre: {
+        type: String,
+        required: false
+    },
+    city: {
+        type: String,
+        required: false
+    },
+    state: {
+        type: String,
+        required: false
+    },
+    fans: {
+        type: String,
+        required: false
+    },
+    fan_of: {
+        type: Array,
+        required: false
+    },
+    applause: {
+        type: String,
+        required: false
+    },
+    shows: {
+        type: String,
+        required: false
+    },
+    tips: {
+        type: String,
+        required: false
     }
 });
 
 UserSchema.methods.serialize = function () {
     return {
         username: this.username || "",
-        // projects: this.projects || ""
         email: this.email || "",
-        account_type: this.account_type || ""
+        account_type: this.account_type || "",
+        corner_type: this.corner_type || "",
+        profile_image: this.profile_image || "",
+        stage_name: this.stage_name || "",
+        genre: this.genre || "",
+        city: this.city || "",
+        state: this.state || "",
+        fans: this.fans || "0",
+        fan_of: this.fan_of || [],
+        applause: this.applause || "0",
+        shows: this.shows || "0",
+        tips: this.tips || "0"
     };
 };
 
