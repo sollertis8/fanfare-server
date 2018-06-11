@@ -133,8 +133,8 @@ router.post('/', jsonParser, (req, res) => {
 });
 
 // Never expose all your users like below in a prod application we're just doing
-// this so we have a quick way to see if we're creating users. keep in mind, you
-// can also verify this in the Mongo shell.
+// this so we have a quick way to see if we're creating users. keep in mind,
+// you can also verify this in the Mongo shell.
 router.get('/', (req, res) => {
     return User
         .find()
@@ -188,7 +188,7 @@ router.get('/profile/:id', (req, res) => {
         })
 })
 
-// save images
+// upload image
 router.post('/profile/:id', (req, res) => {
     console.log(req.body.id);
     console.log(req.body.profile_image);
@@ -197,7 +197,7 @@ router.post('/profile/:id', (req, res) => {
     for (let i = 0; i < requiredFields.length; i++) {
         const field = requiredFields[i];
         if (!(field in req.body)) {
-            const message = `${field}\` is required`
+            const message = `${field}\ is required`
             console.error(message);
             return res
                 .status(400)
@@ -230,6 +230,57 @@ router.post('/profile/:id', (req, res) => {
 
 })
 
+// upload Video
+router.post('/upload/:id', (req, res) => {
+    console.log('upload video endpoint reached');
+    console.log(req.body.performance_files);
+
+    const requiredFields = ['id'];
+    for (let i = 0; i < requiredFields.length; i++) {
+        const field = requiredFields[i];
+        if (!(field in req.body)) {
+            const message = `${field}\ is required`
+            console.error(message);
+            return res
+                .status(400)
+                .send(message);
+        }
+    }
+    if (req.params.id !== req.body.id) {
+        const message = `Request path id (${req.params.id}) and request body id (${req.body.id}) must match`;
+        console.error(message);
+        return res
+            .status(400)
+            .send(message);
+    }
+
+    const toUpdate = {};
+    const updateableFields = ['performance_files'];
+    updateableFields.forEach(field => {
+        if (field in req.body) {
+            var fs = require('fs');
+            fs.writeFile(`./uploads/${req.body.performance_files}`, req.body.performance, function (err) {
+                if (err) {
+                    return console.log(err);
+                }
+
+                console.log("The file was saved!");
+            });
+            toUpdate[field] = `${req.body[field]}`;
+        }
+    });
+
+    User
+        .findByIdAndUpdate(req.params.id, {$push: toUpdate})
+        .then(user => res.status(204))
+        .catch(err => res.status(500).json({message: err}));
+    res
+        .status(204)
+        .end();
+
+})
+
+// add user info
 router.put('/user/:id', jsonParser, (req, res) => {
     const requiredFields = ['id'];
     for (let i = 0; i < requiredFields.length; i++) {
@@ -264,7 +315,8 @@ router.put('/user/:id', jsonParser, (req, res) => {
         'fans',
         'fan_of',
         'applause',
-        'shows',
+        'shows_count',
+        'performances',
         'tips'
     ];
     console.log("REQ", req.body)
@@ -278,9 +330,8 @@ router.put('/user/:id', jsonParser, (req, res) => {
         .findByIdAndUpdate(req.params.id, {$set: toUpdate})
         .then(user => res.status(204))
         .catch(err => res.status(500).json({message: err}));
-    res
-        .status(204)
-        .end();
+    res.status(204)
+    // .end();
 
 });
 
@@ -302,19 +353,9 @@ module.exports = {
     router
 };
 
-// upload Image
-router.post('/upload', (req, res, next) => {
-    console.log(req);
-    let imageFile = req.files.file;
-
-    imageFile.mv(`${__dirname}/public/${req.body.filename}.jpg`, function (err) {
-        if (err) {
-            return res
-                .status(500)
-                .send(err);
-        }
-
-        res.json({file: `public/${req.body.filename}.jpg`});
-    });
-
-})
+// // upload Image router.post('/upload', (req, res, next) => {
+// console.log(req);     let imageFile = req.files.file;
+// imageFile.mv(`${__dirname}/public/${req.body.filename}.jpg`, function (err) {
+//         if (err) {             return res                 .status(500)
+// .send(err);         }         res.json({file:
+// `public/${req.body.filename}.jpg`});     }); })

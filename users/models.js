@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise;
 
+// const PerformanceSchema = mongoose.Schema({     name: {         type: String
+// },     location: {         type: String     } })
+
 const UserSchema = mongoose.Schema({
     username: {
         type: String,
@@ -60,8 +63,12 @@ const UserSchema = mongoose.Schema({
         type: String,
         required: false
     },
-    shows: {
+    shows_count: {
         type: String,
+        required: false
+    },
+    performance_files: {
+        type: Array,
         required: false
     },
     tips: {
@@ -69,6 +76,9 @@ const UserSchema = mongoose.Schema({
         required: false
     }
 });
+
+// PerformanceSchema.methods.serialize = function () {     return { name:
+// this.name || "",         location: this.location || ""     } }
 
 UserSchema.methods.serialize = function () {
     return {
@@ -81,11 +91,12 @@ UserSchema.methods.serialize = function () {
         genre: this.genre || "",
         city: this.city || "",
         state: this.state || "",
-        fans: this.fans || "0",
+        fans: this.fans || "",
         fan_of: this.fan_of || [],
-        applause: this.applause || "0",
-        shows: this.shows || "0",
-        tips: this.tips || "0"
+        applause: this.applause || "",
+        shows_count: this.shows_count || "",
+        performance_files: this.performance_files || [],
+        tips: this.tips || ""
     };
 };
 
