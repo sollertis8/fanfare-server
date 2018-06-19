@@ -6,26 +6,36 @@ const router = express.Router();
 const uuid = require('uuid');
 const path = require('path');
 const jsonParser = bodyParser.json();
-const urlencodedParser = bodyParser.urlencoded({extended: true});
+const urlencodedParser = bodyParser.urlencoded({extended: false});
 const fs = require('fs');
-// const formidable = require('formidable'); router.use(formidable({ encoding:
-// 'utf-8', uploadDir: '/uploads', multiples: false,     // req.files to be
-// arrays of files })); configure storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {/*         Files will be saved in
-the 'uploads' directory. Make     sure this directory already exists! */
-        cb(null, './uploads/');
-    },
-    filename: (req, file, cb) => {
-        const newFilename = `${uuidv4()}${path.extname(file.originalname)}`;
-        cb(null, newFilename);
+const crypto = require('crypto');
+
+const GridFsStorage = require('multer-gridfs-storage');
+
+var storage = new GridFsStorage({
+    url: 'mongodb://localhost/fanfare',
+    file: (req, file) => {
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = {
+                    filename: filename,
+                    bucketName: 'uploads'
+                };
+                resolve(fileInfo);
+            });
+        });
     }
 });
-// create the multer instance that will be used to upload/save the file const
-upload = multer({dest: './uploads'});
-// var upload = multer({dest: './uploads'}).array('txtThumb',
-// settings.maxFilesUpload); router.use(multer({dest:
-// 'uploads/'}).single('file')); Post to register a new user
+
+const upload = multer({storage});
+
+// const upload = multer({storage: storage});
+const sUpload = upload.single('performance');
+
 router.post('/', jsonParser, (req, res) => {
     const requiredFields = ['username', 'email', 'password'];
     const missingField = requiredFields.find(field => !(field in req.body));
@@ -98,7 +108,7 @@ router.post('/', jsonParser, (req, res) => {
     let {username, email, password} = req.body;
     // Username, email and password come in pre-trimmed, otherwise we throw an error
     // before this
-
+    console.log(req.body);
     return User
         .find({username})
         .count()
@@ -231,9 +241,10 @@ router.post('/profile/:id', (req, res) => {
 })
 
 // upload Video
-router.post('/upload/:id', (req, res) => {
+router.post('/upload/:id', jsonParser, (req, res) => {
     console.log('upload video endpoint reached');
-    console.log(req.body.performance_files);
+    console.log(req.files);
+    console.log(req.body)
 
     const requiredFields = ['id'];
     for (let i = 0; i < requiredFields.length; i++) {
@@ -255,23 +266,33 @@ router.post('/upload/:id', (req, res) => {
     }
 
     const toUpdate = {};
-    const updateableFields = ['performance_files'];
+    const updateableFields = ['performance_files', 'performance', 'item_id', 'item_name'];
     updateableFields.forEach(field => {
-        if (field in req.body) {
+        if (field in req.files) {
             var fs = require('fs');
-            fs.writeFile(`./uploads/${req.body.performance_files}`, req.body.performance, function (err) {
+            fs.writeFile(`./uploads/${req.body.item_id}.mp4`, req.files.performance.data, function (err) {
                 if (err) {
-                    return console.log(err);
+                    return
+                    console.log(err);
                 }
-
                 console.log("The file was saved!");
             });
+
+            // toUpdate[field] = `${req.files[field]}`;
+        }
+        if (field in req.body) {
             toUpdate[field] = `${req.body[field]}`;
+            console.log(toUpdate);
         }
     });
 
     User
-        .findByIdAndUpdate(req.params.id, {$push: toUpdate})
+        .findByIdAndUpdate(req.params.id, {
+        // $push: toUpdate
+        $addToSet: {
+            "performance_files": toUpdate
+        }
+    })
         .then(user => res.status(204))
         .catch(err => res.status(500).json({message: err}));
     res
@@ -279,6 +300,45 @@ router.post('/upload/:id', (req, res) => {
         .end();
 
 })
+
+// stream video
+router.get('/video/:id', (req, res) => {
+    console.log(`the request params are ${req.query.performance_list}`);
+    // console.log(`The data is ${req.body.performance_list}`);
+    const path = `./uploads/${req.query.performance_list}`
+    const stat = fs.statSync(path)
+    const fileSize = stat.size
+    // console.log(fileSize);
+    const range = req.headers.range
+    if (range) {
+        const parts = range
+            .replace(/bytes=/, "")
+            .split("-")
+        const start = parseInt(parts[0], 10)
+        const end = parts[1]
+            ? parseInt(parts[1], 10)
+            : fileSize - 1
+        const chunksize = (end - start) + 1
+        const file = fs.createReadStream(path, {start, end})
+        const head = {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunksize,
+            'Content-Type': 'video/mp4'
+        }
+        res.writeHead(206, head);
+        file.pipe(res);
+    } else {
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4'
+        }
+        res.writeHead(200, head)
+        fs
+            .createReadStream(path)
+            .pipe(res)
+    }
+});
 
 // add user info
 router.put('/user/:id', jsonParser, (req, res) => {
@@ -316,7 +376,7 @@ router.put('/user/:id', jsonParser, (req, res) => {
         'fan_of',
         'applause',
         'shows_count',
-        'performances',
+        'performance',
         'tips'
     ];
     console.log("REQ", req.body)
@@ -330,8 +390,9 @@ router.put('/user/:id', jsonParser, (req, res) => {
         .findByIdAndUpdate(req.params.id, {$set: toUpdate})
         .then(user => res.status(204))
         .catch(err => res.status(500).json({message: err}));
-    res.status(204)
-    // .end();
+    res
+        .status(204)
+        .end();
 
 });
 

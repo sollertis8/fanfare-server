@@ -5,7 +5,8 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
 // const PerformanceSchema = mongoose.Schema({     name: {         type: String
-// },     location: {         type: String     } })
+// },     location: {         type: String     } }) const PerformanceSchema =
+// mongoose.Schema({})
 
 const UserSchema = mongoose.Schema({
     username: {
@@ -67,10 +68,18 @@ const UserSchema = mongoose.Schema({
         type: String,
         required: false
     },
-    performance_files: {
-        type: Array,
-        required: false
-    },
+    performance_files: [
+        {
+            type: Array,
+            default: [
+                {
+                    item_id: "",
+                    item_name: ""
+
+                }
+            ]
+        }
+    ],
     tips: {
         type: String,
         required: false
@@ -92,11 +101,14 @@ UserSchema.methods.serialize = function () {
         city: this.city || "",
         state: this.state || "",
         fans: this.fans || "",
-        fan_of: this.fan_of || [],
+        fan_of: this.fan_of || "",
         applause: this.applause || "",
         shows_count: this.shows_count || "",
-        performance_files: this.performance_files || [],
-        tips: this.tips || ""
+        performance_files: this.performance_files || "",
+        tips: this.tips || "",
+        item: this.item || "",
+        item_id: this.item_id || "",
+        item_name: this.item_name || ""
     };
 };
 
@@ -104,7 +116,7 @@ UserSchema.methods.validatePassword = function (password) {
     return bcrypt.compare(password, this.password);
 };
 UserSchema.statics.hashPassword = function (password) {
-    return bcrypt.hash(password, 10);
+    return bcrypt.hash(password, 20);
 };
 const collection = "users";
 const User = mongoose.model('User', UserSchema, collection);
