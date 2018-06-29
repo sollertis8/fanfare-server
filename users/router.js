@@ -36,6 +36,7 @@ const upload = multer({storage});
 // const upload = multer({storage: storage});
 const sUpload = upload.single('performance');
 
+// create new user
 router.post('/', jsonParser, (req, res) => {
     const requiredFields = ['username', 'email', 'password'];
     const missingField = requiredFields.find(field => !(field in req.body));
@@ -131,6 +132,7 @@ router.post('/', jsonParser, (req, res) => {
         .catch(err => {
             // Forward validation errors on to the client, otherwise give a 500 error
             // because something unexpected has happened
+            console.log(err);
             if (err.reason === 'ValidationError') {
                 return res
                     .status(err.code)
@@ -143,8 +145,8 @@ router.post('/', jsonParser, (req, res) => {
 });
 
 // Never expose all your users like below in a prod application we're just doing
-// this so we have a quick way to see if we're creating users. keep in mind, you
-// can also verify this in the Mongo shell.
+// this so we have a quick way to see if we're creating users. keep in mind,
+// you can also verify this in the Mongo shell.
 router.get('/', (req, res) => {
     return User
         .find()
@@ -187,7 +189,7 @@ router.put('/account/:id', jsonParser, (req, res) => {
 });
 
 // get user profile
-router.get('/profile/:id', (req, res) => {
+router.get('/profile/:id', (req, res, next) => {
     User
         .findById(req.params.id, function (e, profile) {
             if (e) 
