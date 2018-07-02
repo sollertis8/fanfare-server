@@ -4,10 +4,6 @@ const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise;
 
-// const PerformanceSchema = mongoose.Schema({     name: {         type: String
-// },     location: {         type: String     } }) const PerformanceSchema =
-// mongoose.Schema({})
-
 const UserSchema = mongoose.Schema({
     username: {
         type: String,
@@ -74,8 +70,10 @@ const UserSchema = mongoose.Schema({
             default: [
                 {
                     item_id: "",
-                    item_name: ""
-
+                    item_name: "",
+                    item_fare: "",
+                    item_applause: "",
+                    item_encore: ""
                 }
             ]
         }
@@ -85,9 +83,6 @@ const UserSchema = mongoose.Schema({
         required: false
     }
 });
-
-// PerformanceSchema.methods.serialize = function () {     return { name:
-// this.name || "",         location: this.location || ""     } }
 
 UserSchema.methods.serialize = function () {
     return {
@@ -108,7 +103,10 @@ UserSchema.methods.serialize = function () {
         tips: this.tips || "",
         item: this.item || "",
         item_id: this.item_id || "",
-        item_name: this.item_name || ""
+        item_name: this.item_name || "",
+        item_fare: this.item_fare || "",
+        item_applause: this.item_applause || "",
+        item_encore: this.item_encore || ""
     };
 };
 
